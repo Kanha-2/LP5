@@ -1,0 +1,106 @@
+import numpy as np
+import pandas as pd 
+import matplotlib.pyplot as plt 
+
+import tensorflow as tf
+from tensorflow import keras
+from keras import models,layers
+from keras.datasets import fashion_mnist
+
+(train_images,train_labels),(test_images,test_labels)=fashion_mnist.load_data()
+
+print("Training Images Shape: ",train_images.shape)
+print("Test Images Shape: ",test_images.shape)
+print("Training labesl Shape: ",train_labels.shape)
+print("Test label Shape: ",train_labels.shape)
+
+def plot_sample_image(images,labels,n=10):
+    plt.figure(figsize=(10,3))
+    for i in range(n):
+        plt.subplot(1,n,i+1)
+        plt.imshow(images[i])
+        plt.title(f"Label {labels[i]}")
+        plt.axis('off')
+    plt.show()
+
+plot_sample_image(train_images, train_labels, n=11)
+
+
+train_images[0]
+
+train_images[0]
+train_images=train_images.reshape((train_images.shape[0],28,28,1))
+test_images=test_images.reshape((test_images.shape[0],28,28,1))
+
+print("Training Images Shape: ",train_images.shape)
+print("Test Images Shape: ",test_images.shape)
+
+train_images[0]
+
+
+model=models.Sequential([
+    layers.Conv2D(256,(3,3),activation='relu',padding='same',input_shape=(28,28,1)),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2,2)),
+
+    layers.Conv2D(256,(3,3),activation='relu',padding='same'),
+    layers.BatchNormalization(),
+    layers.MaxPooling2D((2,2)),
+
+
+    layers.Conv2D(256,(3,3),activation='relu',padding='same'),
+
+    layers.Flatten(),
+    layers.Dense(256,activation='relu'),
+    layers.Dropout(0.5),
+
+    layers.Dense(10,activation='softmax'),
+
+    
+])
+
+model.summary()
+
+def plot_accuracy(history):
+    plt.plot(history.history['accuracy'],label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'],label='Validation Accuracy')
+    plt.title("model Accuracy Over Epochs")
+    plt.xlabel("Epochs")
+    plt.ylabel("Accuracy")
+    plt.legend()
+    plt.show()
+
+plot_accuracy(history)    
+
+   
+
+def predict_and_display(image_idx):
+    image=test_images[image_idx]
+    true_label=test_labels[image_idx]
+
+    prediction=model.predict(image.reshape(1,28,28,1))
+    predicted_label = np.argmax(prediction)
+
+    plt.imshow(image.reshape(28, 28), cmap='gray')
+    plt.title(f'True Label: {true_label}, Predicted Label: {predicted_label}')
+    plt.axis('off')
+    plt.show()
+
+    
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+prediction=model.predict(test_images)
+predicted_labels = np.argmax(prediction, axis=1)
+
+conf_matrix = confusion_matrix(test_labels, predicted_labels)
+plt.figure(figsize=(10, 8))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+predict_and_display(1)
+
+
