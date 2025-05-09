@@ -1,0 +1,77 @@
+import tensorflow as tf 
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Embedding, Bidirectional, LSTM, Dense, Dropout, Conv1D,GlobalMaxPooling1D
+from tensorflow.keras.datasets import imdb 
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import matplotlib.pyplot as plt 
+
+(Xtrain,ytrain),(Xtest,ytest)=imdb.load_data(num_words=10000)
+
+len(Xtrain)
+
+len(Xtest)
+
+maxlen=200
+Xtrain=pad_sequences(Xtrain,maxlen=maxlen)
+Xtest=pad_sequences(Xtest,maxlen=maxlen)
+
+model=keras.Sequential([
+    layers.Embedding(input_dim=10000,output_dim=32,input_length=maxlen),
+    layers.Flatten(),
+    layers.Dense(64,activation='relu'),
+    layers.Dense(64,activation='relu'),
+    layers.Dense(1,activation='sigmoid')
+])
+
+# model = keras.Sequential([
+#     layers.Embedding(input_dim=10000, output_dim=256, input_length=maxlen),  
+#     Conv1D(128, 5, activation='relu'), 
+#     GlobalMaxPooling1D(),  
+#     Dropout(0.4),  
+#     Dense(128, activation='relu'),  
+#     Dropout(0.4),
+#     Dense(1, activation='sigmoid')
+# ])
+
+
+
+model.compile(optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
+
+
+history=model.fit(
+    Xtrain,ytrain,epochs=15,batch_size=256,validation_split=0.25
+)
+
+
+loss,accuracy=model.evaluate(Xtest,ytest)
+accuracy
+
+plt.plot(history.history['accuracy'],label='Training Accuracy')
+plt.plot(history.history['val_accuracy'],label='Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.title('Training vs Validation Accuracy')
+plt.show()
+
+predictions = model.predict(Xtest)
+predicted_labels = (predictions > 0.5).astype(int).flatten()
+
+word_index = imdb.get_word_index()
+reverse_word_index = {value: key for key, value in word_index.items()}
+
+def decode_review(encoded_review):
+    return ' '.join([reverse_word_index.get(i - 3, '?') for i in encoded_review if i > 2])
+
+
+     
+
+print("\n Predicted Results on Test Set:")
+for i in range(10):
+    print(f"\nReview {i+1}:")
+    print(decode_review(Xtest[i]))
+    print(f"Predicted: {'Positive' if predicted_labels[i] == 1 else 'Negative'} | Actual: {'Positive' if ytest[i] == 1 else 'Negative'}")
+
+
+
