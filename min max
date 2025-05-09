@@ -1,0 +1,139 @@
+
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <chrono>
+#include <omp.h>
+
+using namespace std;
+using namespace chrono;
+
+class ParallelReduction{
+    private:
+        vector<int>arr;
+        int size;
+
+        int min_seq,min_par;
+        int max_seq,max_par;
+        long long sum_seq,sum_par;
+        double avg_seq,avg_par;
+
+        double time_min_seq, time_min_par;
+        double time_max_seq, time_max_par;
+        double time_sum_seq,time_sum_par;
+        double time_avg_seq, time_avg_par;
+
+
+
+        public:
+        ParallelReduction(int n):size(n){
+            arr.resize(size);
+        }
+
+        void generateArray(){
+            srand(time(0));
+            for(int i=0;i<size;i++){
+                arr[i]=rand()%100+1;
+
+            }
+        }
+
+        void computeSequential(){
+            auto start=high_resolution_clock::now();
+            min_seq=arr[0];
+            for (int i=1;i<size;i++){
+                if(arr[i]<min_seq) min_seq=arr[i];
+            }
+            time_min_seq=duration<double>(high_resolution_clock::now()-start).count();
+
+             start=high_resolution_clock::now();
+            max_seq=arr[0];
+            for (int i=1;i<size;i++){
+                if(arr[i]>max_seq) max_seq=arr[i];
+            }
+            time_max_seq=duration<double>(high_resolution_clock::now()-start).count();
+
+            start =high_resolution_clock::now();
+            sum_seq=0;
+            for(int i=0;i<size;i++){
+                sum_seq+=arr[i];
+            }
+            time_sum_seq=duration<double>(high_resolution_clock::now()-start).count();
+
+            start =high_resolution_clock::now();
+            avg_seq=static_cast<double>(sum_seq)/size;
+            
+            time_avg_seq=duration<double>(high_resolution_clock::now()-start).count();
+        }
+        
+        void computeParallel(){
+            auto start=high_resolution_clock::now();
+            min_par=arr[0];
+            #pragma omp parallel for reduction(min:min_par)
+            for (int i=1;i<size;i++){
+                if(arr[i]<min_par) min_par=arr[i];
+            }
+            time_min_par=duration<double>(high_resolution_clock::now()-start).count();
+
+            start=high_resolution_clock::now();
+            max_par=arr[0];
+            #pragma omp parallel for reduction(max:max_par)
+
+            for (int i=1;i<size;i++){
+                if(arr[i]>max_par) max_par=arr[i];
+            }
+            time_max_par=duration<double>(high_resolution_clock::now()-start).count();
+
+            start =high_resolution_clock::now();
+            sum_par=0;
+            #pragma omp parallel for reduction(+:sum_par)
+
+            for(int i=0;i<size;i++){
+                sum_par+=arr[i];
+            }
+            time_sum_par=duration<double>(high_resolution_clock::now()-start).count();
+
+            start =high_resolution_clock::now();
+            avg_par=static_cast<double>(sum_seq)/size;
+            
+            time_avg_par=duration<double>(high_resolution_clock::now()-start).count();
+        }
+
+        void displayResults(){
+
+            cout<<"\n *************** SEQUENTIAL RESULTS ******************** \n";
+            cout<<"min: " << min_seq << " | Time : "<<time_min_seq <<"sec \n";
+            cout<<"max: " << max_seq << " | Time : "<<time_max_seq <<"sec \n";
+            cout<<"sum: " << sum_seq << " | Time : "<<time_sum_seq <<"sec \n";
+            cout<<"avg: " << avg_seq << " | Time : "<<time_avg_seq <<"sec \n";
+
+            cout<<"\n *************** PARALLEL RESULTS ******************** \n";
+            cout<<"min: " << min_par << " | Time : "<<time_min_par <<"sec \n";
+            cout<<"max: " << max_par << " | Time : "<<time_max_par <<"sec \n";
+            cout<<"sum: " << sum_par << " | Time : "<<time_sum_par <<"sec \n";
+            cout<<"avg: " << avg_par << " | Time : "<<time_avg_par <<"sec \n";
+
+            cout << "\n*************** Speedup Factors ***************\n";
+            cout << "Speedup (Min): " << time_min_seq / time_min_par << "x\n";
+            cout << "Speedup (Max): " << time_max_seq / time_max_par << "x\n";
+            cout << "Speedup (Sum): " << time_sum_seq / time_sum_par << "x\n";
+            cout << "Speedup (Avg): " << time_avg_seq / time_avg_par << "x\n";
+
+        }     
+};
+
+int main(){
+ int n ;
+  cout<<"Enter array size : ";
+  cin>>n;
+
+  ParallelReduction obj(n);
+  obj.generateArray();
+  obj.computeParallel();
+  obj.computeSequential();
+  obj.displayResults();
+
+    return 0;
+}
+
